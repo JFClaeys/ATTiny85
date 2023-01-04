@@ -16,7 +16,7 @@ const uint16_t gSequence_Off = CALC_FREQUENCY_CYCLE(FREQUENCY);
 void onSinglePressed();
 void onDoubleClick();
 
-bool isLaser_lit = true;  // have we requested leds to be visible or not? (i.e: pause mode)
+bool isLaser_lit = false;  // have we requested leds to be visible or not? (i.e: pause mode)
 
 class Button{
 private:
@@ -64,7 +64,7 @@ void processLoopContent() {
     iWait++;
     return;
   }
-  
+
   iWait = 0;
 
   digitalWrite(LASER_PINOUT, !digitalRead(LASER_PINOUT));
@@ -73,16 +73,19 @@ void processLoopContent() {
   } else {
     iNextCycleTime = gSequence_Off;
   }
-
-}  
-
+}
 /*======================================================================*/
 
 void setup() {
   // put your setup code here, to run once:
   pinMode(LASER_PINOUT, OUTPUT);
-  pinMode(PUSH_BUTTON, INPUT_PULLUP);  
-
+  pinMode(PUSH_BUTTON, INPUT_PULLUP);
+  for(byte i = 0; i < 3; i++ ) {
+    digitalWrite(LASER_PINOUT, HIGH);
+    delay(100);
+    digitalWrite(LASER_PINOUT, LOW);
+    delay(100);
+  }
 }
 
 void loop() {
