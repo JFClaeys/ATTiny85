@@ -1,7 +1,7 @@
 #include <OneButton.h>
 
 /* frequency formula : 500 DIV xFrequency = Sequence On and Off time, on a 50% duty cycle */
-#define FREQUENCY 5  // 10 hertz, i.e.: 10 cycle per second
+#define FREQUENCY_5_HZ 5   //  5 hertz, i.e.:  5 cycle per second
 #define CALC_FREQUENCY_CYCLE( x )  500 / x
 
 #define CLICK_MS_DURATION 120
@@ -9,14 +9,20 @@
 #define LASER_PINOUT PB4
 #define PUSH_BUTTON PB3
 
-const uint16_t gSequence_On = CALC_FREQUENCY_CYCLE(FREQUENCY);
-const uint16_t gSequence_Off = CALC_FREQUENCY_CYCLE(FREQUENCY);
-
 //forward declarations
 void onSinglePressed();
 void onDoubleClick();
 
 bool isLaser_lit = false;  // have we requested leds to be visible or not? (i.e: pause mode)
+uint8_t currentFrequency = FREQUENCY_5_HZ;
+
+uint16_t GetSequenceMilli_On( uint8_t currentFreq ) {
+  return CALC_FREQUENCY_CYCLE( currentFreq );
+}
+
+uint16_t GetSequenceMilli_Off( uint8_t currentFreq ) {
+  return CALC_FREQUENCY_CYCLE( currentFreq );
+}
 
 void CommandAcknowledge() {
   for(byte i = 0; i < 3; i++ ) {
@@ -65,7 +71,7 @@ void onDoubleClick() {  // test to see double clicking behaviour
 
 Button button(PUSH_BUTTON);
 uint16_t iWait = 0;
-uint16_t iNextCycleTime = gSequence_On;  // current cycle before next serqunec change (from on to off)
+uint16_t iNextCycleTime = GetSequenceMilli_On(currentFrequency);  // current cycle before next serqunec change (from on to off)
 
 void processLoopContent() {
   if (iWait < iNextCycleTime) {
@@ -78,11 +84,12 @@ void processLoopContent() {
 
   digitalWrite(LASER_PINOUT, !digitalRead(LASER_PINOUT));
   if (digitalRead(LASER_PINOUT)) {
-    iNextCycleTime = gSequence_On;
+    iNextCycleTime = GetSequenceMilli_On(currentFrequency);
   } else {
-    iNextCycleTime = gSequence_Off;
+    iNextCycleTime = GetSequenceMilli_Off(currentFrequency);
   }
 }
+
 /*======================================================================*/
 
 void setup() {
