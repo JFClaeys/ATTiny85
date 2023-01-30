@@ -18,6 +18,15 @@ void onDoubleClick();
 
 bool isLaser_lit = false;  // have we requested leds to be visible or not? (i.e: pause mode)
 
+void CommandAcknowledge() {
+  for(byte i = 0; i < 3; i++ ) {
+    digitalWrite(LASER_PINOUT, HIGH);
+    delay(100);
+    digitalWrite(LASER_PINOUT, LOW);
+    delay(100);
+  }
+}
+
 class Button{
 private:
   OneButton button;
@@ -80,12 +89,7 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(LASER_PINOUT, OUTPUT);
   pinMode(PUSH_BUTTON, INPUT_PULLUP);
-  for(byte i = 0; i < 3; i++ ) {
-    digitalWrite(LASER_PINOUT, HIGH);
-    delay(100);
-    digitalWrite(LASER_PINOUT, LOW);
-    delay(100);
-  }
+  CommandAcknowledge();
 }
 
 void loop() {
