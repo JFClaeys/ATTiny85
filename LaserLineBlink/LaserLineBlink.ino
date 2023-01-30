@@ -6,8 +6,8 @@
 
 #define CLICK_MS_DURATION 120
 
-#define LASER_PINOUT PB0
-#define PUSH_BUTTON PB1
+#define LASER_PINOUT PB4
+#define PUSH_BUTTON PB3
 
 const uint16_t gSequence_On = CALC_FREQUENCY_CYCLE(FREQUENCY);
 const uint16_t gSequence_Off = CALC_FREQUENCY_CYCLE(FREQUENCY);
