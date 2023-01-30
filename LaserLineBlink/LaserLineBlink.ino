@@ -2,6 +2,7 @@
 
 /* frequency formula : 500 DIV xFrequency = Sequence On and Off time, on a 50% duty cycle */
 #define FREQUENCY_5_HZ 5   //  5 hertz, i.e.:  5 cycle per second
+#define FREQUENCY_10_HZ 10 // 10 hertz, i.e.: 10 cycle per second
 #define CALC_FREQUENCY_CYCLE( x )  500 / x
 
 #define CLICK_MS_DURATION 120
@@ -12,6 +13,7 @@
 //forward declarations
 void onSinglePressed();
 void onDoubleClick();
+void onLongPressed();
 
 bool isLaser_lit = false;  // have we requested leds to be visible or not? (i.e: pause mode)
 uint8_t currentFrequency = FREQUENCY_5_HZ;
@@ -41,6 +43,7 @@ public:
     button.setClickTicks(CLICK_MS_DURATION);
     button.attachClick([](void *scope) { ((Button *) scope)->Clicked();}, this);
     button.attachDoubleClick([](void *scope) { ((Button *) scope)->DoubleClicked();}, this);
+    button.attachLongPressStart([](void *scope) { ((Button *) scope)->LongPressed();}, this);
   }
 
   void Clicked() {
@@ -49,6 +52,10 @@ public:
 
   void DoubleClicked() {
     onDoubleClick();
+  }
+
+  void LongPressed() {
+    onLongPressed();
   }
 
   void read() {
@@ -66,6 +73,17 @@ void onSinglePressed() {
 void onDoubleClick() {  // test to see double clicking behaviour
   if (!isLaser_lit) {
     // right now, nothing, but I'd like eventually to increase either the frequency or increase/decrease the duty cycle
+  }
+}
+
+void onLongPressed() {
+  if (!isLaser_lit) {
+    if (currentFrequency == FREQUENCY_5_HZ) {
+      currentFrequency = FREQUENCY_10_HZ;
+    } else {
+      currentFrequency = FREQUENCY_5_HZ;
+    }
+   CommandAcknowledge();
   }
 }
 
