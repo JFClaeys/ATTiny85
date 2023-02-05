@@ -16,6 +16,7 @@ void onDoubleClick();
 void onLongPressed();
 
 bool isLaser_lit = false;  // have we requested leds to be visible or not? (i.e: pause mode)
+bool isMomentaryMode = false; // this mode will be activated only when button is pushed while booting
 uint8_t currentFrequency = FREQUENCY_5_HZ;
 
 uint16_t GetSequenceMilli_On( uint8_t currentFreq ) {
@@ -111,17 +112,31 @@ void processLoopContent() {
 /*======================================================================*/
 
 void setup() {
-  // put your setup code here, to run once:
   pinMode(LASER_PINOUT, OUTPUT);
-  pinMode(PUSH_BUTTON, INPUT_PULLUP);
+  pinMode(PUSH_BUTTON, INPUT_PULLUP);  // not realy required if not iusing momntsary mode, as it would the the OneButton default
+
+  digitalWrite(LASER_PINOUT, HIGH);    // light the laser, to show we are working
+  delay(250);                          // a little quarter of a second waiting, as to be sure the button will be correctly read
+  isMomentaryMode = (digitalRead(PUSH_BUTTON) == LOW); // is the button being pressed  at startup ?
+
+  if (isMomentaryMode) {
+    CommandAcknowledge();  //extra one to prove we are in this mode
+  }
+  // standard for both mode
   CommandAcknowledge();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  button.read();
+  if (isMomentaryMode) {
+    // in momentory mode, we are not using the button manager, we are just checking it directly
+    isLaser_lit = (digitalRead(PUSH_BUTTON) == LOW);  // input_pullup thus high when not pressed, low when pressed
+    digitalWrite(LASER_PINOUT, isLaser_lit);  // adjust the output of the leaser accordingly
+  } else {
+    // i not in monentary mode, read the button state, react to normal events in the processLoopContent
+    button.read();
 
-  if (isLaser_lit) {
-    processLoopContent();
-  } 
+    if (isLaser_lit) {
+      processLoopContent();
+    }
+  }  
 }
