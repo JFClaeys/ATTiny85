@@ -3,7 +3,12 @@
 /* frequency formula : 500 DIV xFrequency = Sequence On and Off time, on a 50% duty cycle */
 #define FREQUENCY_5_HZ 5   //  5 hertz, i.e.:  5 cycle per second
 #define FREQUENCY_10_HZ 10 // 10 hertz, i.e.: 10 cycle per second
-#define CALC_FREQUENCY_CYCLE( x )  500 / x
+#define FREQUENCY_15_HZ 15 // 15 hertz, i.e.: 15 cycle per second
+#define FREQUENCY_20_HZ 20 // 20 hertz, i.e.: 02 cycle per second
+
+#define DUTYCYCLE_50 500   // 50% on, 50% off
+
+#define CALC_FREQUENCY_CYCLE( x )  DUTYCYCLE_50 / x
 
 #define CLICK_MS_DURATION 120
 
@@ -79,10 +84,19 @@ void onDoubleClick() {  // test to see double clicking behaviour
 
 void onLongPressed() {
   if (!isLaser_lit) {
-    if (currentFrequency == FREQUENCY_5_HZ) {
-      currentFrequency = FREQUENCY_10_HZ;
-    } else {
-      currentFrequency = FREQUENCY_5_HZ;
+    switch (currentFrequency) {
+      case FREQUENCY_5_HZ :
+        currentFrequency = FREQUENCY_10_HZ;
+        break;
+      case FREQUENCY_10_HZ :
+        currentFrequency = FREQUENCY_15_HZ;
+        break;      
+      case FREQUENCY_15_HZ :
+        currentFrequency = FREQUENCY_20_HZ;
+        break;      
+      case FREQUENCY_20_HZ :
+        currentFrequency = FREQUENCY_5_HZ;
+        break;      
     }
    CommandAcknowledge();
   }
