@@ -1,14 +1,17 @@
 #include <OneButton.h>
 
-/* frequency formula : 500 DIV xFrequency = Sequence On and Off time, on a 50% duty cycle */
 #define FREQUENCY_5_HZ 5   //  5 hertz, i.e.:  5 cycle per second
 #define FREQUENCY_10_HZ 10 // 10 hertz, i.e.: 10 cycle per second
 #define FREQUENCY_15_HZ 15 // 15 hertz, i.e.: 15 cycle per second
 #define FREQUENCY_20_HZ 20 // 20 hertz, i.e.: 02 cycle per second
+#define FREQUENCY_FULL_HZ 100
 
-#define DUTYCYCLE_50 500   // 50% on, 50% off
-
-#define CALC_FREQUENCY_CYCLE( x )  DUTYCYCLE_50 / x
+#define DUTYCYCLE_TOT 10
+#define DUTYCYCLE_50 5   // 50% on, 50% off
+#define DUTYCYCLE_40 4   // 40% on, 60% off
+#define DUTYCYCLE_30 3   // 40% on, 60% off
+#define DUTYCYCLE_20 2   // 40% on, 60% off
+#define DUTYCYCLE_10 1   // 40% on, 60% off
 
 #define CLICK_MS_DURATION 120
 
@@ -20,24 +23,32 @@ void onSinglePressed();
 void onDoubleClick();
 void onLongPressed();
 
-bool isLaser_lit = false;  // have we requested leds to be visible or not? (i.e: pause mode)
+bool isLaser_lit = false;     // have we requested leds to be visible or not? (i.e: pause mode)
 bool isMomentaryMode = false; // this mode will be activated only when button is pushed while booting
-uint8_t currentFrequency = FREQUENCY_5_HZ;
+uint8_t currentFrequency = FREQUENCY_5_HZ;  // holds the currently selected frequency
+uint8_t currentDutyCycle = DUTYCYCLE_50;    // holds the currently selected duty cycle
+uint16_t seqMilli_On;         //stores the calculated ON duty cycle duration
+uint16_t seqMilli_Off;        //stores the calculated OFF duty cycle duration
+uint16_t iNextCycleTime;      // current cycle before next serqunec change (from on to off)
+uint16_t iWait = 0;
 
-uint16_t GetSequenceMilli_On( uint8_t currentFreq ) {
-  return CALC_FREQUENCY_CYCLE( currentFreq );
+uint16_t GetSequenceMilli_On() {
+  return (FREQUENCY_FULL_HZ / currentFrequency) * currentDutyCycle;
 }
 
-uint16_t GetSequenceMilli_Off( uint8_t currentFreq ) {
-  return CALC_FREQUENCY_CYCLE( currentFreq );
+uint16_t GetSequenceMilli_Off() {
+  return (FREQUENCY_FULL_HZ / currentFrequency) * (DUTYCYCLE_TOT - currentDutyCycle);
 }
 
 void CommandAcknowledge() {
+  seqMilli_On = GetSequenceMilli_On();
+  seqMilli_Off = GetSequenceMilli_Off();
+
   for(byte i = 0; i < 3; i++ ) {
     digitalWrite(LASER_PINOUT, HIGH);
-    delay(100);
+    delay(75);
     digitalWrite(LASER_PINOUT, LOW);
-    delay(100);
+    delay(75);
   }
 }
 
@@ -78,7 +89,24 @@ void onSinglePressed() {
 
 void onDoubleClick() {  // test to see double clicking behaviour
   if (!isLaser_lit) {
-    // right now, nothing, but I'd like eventually to increase either the frequency or increase/decrease the duty cycle
+    switch (currentDutyCycle) {
+      case DUTYCYCLE_50 :
+        currentDutyCycle = DUTYCYCLE_40;
+        break;
+      case DUTYCYCLE_40 :
+        currentDutyCycle = DUTYCYCLE_30;
+        break;
+      case DUTYCYCLE_30 :
+        currentDutyCycle = DUTYCYCLE_20;
+        break;
+      case DUTYCYCLE_20 :
+        currentDutyCycle = DUTYCYCLE_10;
+        break;
+      case DUTYCYCLE_10 :
+        currentDutyCycle = DUTYCYCLE_50;
+        break;
+    }
+   CommandAcknowledge();
   }
 }
 
@@ -90,21 +118,19 @@ void onLongPressed() {
         break;
       case FREQUENCY_10_HZ :
         currentFrequency = FREQUENCY_15_HZ;
-        break;      
+        break;
       case FREQUENCY_15_HZ :
         currentFrequency = FREQUENCY_20_HZ;
-        break;      
+        break;
       case FREQUENCY_20_HZ :
         currentFrequency = FREQUENCY_5_HZ;
-        break;      
+        break;
     }
    CommandAcknowledge();
   }
 }
 
 Button button(PUSH_BUTTON);
-uint16_t iWait = 0;
-uint16_t iNextCycleTime = GetSequenceMilli_On(currentFrequency);  // current cycle before next serqunec change (from on to off)
 
 void processLoopContent() {
   if (iWait < iNextCycleTime) {
@@ -117,9 +143,9 @@ void processLoopContent() {
 
   digitalWrite(LASER_PINOUT, !digitalRead(LASER_PINOUT));
   if (digitalRead(LASER_PINOUT)) {
-    iNextCycleTime = GetSequenceMilli_On(currentFrequency);
+    iNextCycleTime = seqMilli_On;
   } else {
-    iNextCycleTime = GetSequenceMilli_Off(currentFrequency);
+    iNextCycleTime = seqMilli_Off;
   }
 }
 
@@ -138,6 +164,7 @@ void setup() {
   }
   // standard for both mode
   CommandAcknowledge();
+  iNextCycleTime = seqMilli_On;  // current cycle before next serqunec change (from on to off)  
 }
 
 void loop() {
@@ -152,5 +179,5 @@ void loop() {
     if (isLaser_lit) {
       processLoopContent();
     }
-  }  
+  }
 }
