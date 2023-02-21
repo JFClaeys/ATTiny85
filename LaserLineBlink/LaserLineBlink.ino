@@ -29,7 +29,7 @@ uint8_t currentFrequency = FREQUENCY_5_HZ;  // holds the currently selected freq
 uint8_t currentDutyCycle = DUTYCYCLE_50;    // holds the currently selected duty cycle
 uint16_t seqMilli_On;         //stores the calculated ON duty cycle duration
 uint16_t seqMilli_Off;        //stores the calculated OFF duty cycle duration
-uint16_t iNextCycleTime;      // current cycle before next serqunec change (from on to off)
+uint16_t iNextCycleTime;      // current cycle before next sequence change (from on to off)
 uint16_t iWait = 0;
 
 uint16_t GetSequenceMilli_On() {
@@ -40,9 +40,12 @@ uint16_t GetSequenceMilli_Off() {
   return (FREQUENCY_FULL_HZ / currentFrequency) * (DUTYCYCLE_TOT - currentDutyCycle);
 }
 
-void CommandAcknowledge() {
+void SaveToCurrentSettings() {
   seqMilli_On = GetSequenceMilli_On();
   seqMilli_Off = GetSequenceMilli_Off();
+}
+
+void CommandAcknowledge() {
 
   for(byte i = 0; i < 3; i++ ) {
     digitalWrite(LASER_PINOUT, HIGH);
@@ -87,7 +90,7 @@ void onSinglePressed() {
   }
 }
 
-void onDoubleClick() {  // test to see double clicking behaviour
+void onDoubleClick() {
   if (!isLaser_lit) {
     switch (currentDutyCycle) {
       case DUTYCYCLE_50 :
@@ -106,6 +109,7 @@ void onDoubleClick() {  // test to see double clicking behaviour
         currentDutyCycle = DUTYCYCLE_50;
         break;
     }
+   SaveToCurrentSettings();
    CommandAcknowledge();
   }
 }
@@ -126,6 +130,7 @@ void onLongPressed() {
         currentFrequency = FREQUENCY_5_HZ;
         break;
     }
+   SaveToCurrentSettings()
    CommandAcknowledge();
   }
 }
@@ -153,27 +158,24 @@ void processLoopContent() {
 
 void setup() {
   pinMode(LASER_PINOUT, OUTPUT);
-  pinMode(PUSH_BUTTON, INPUT_PULLUP);  // not realy required if not iusing momntsary mode, as it would the the OneButton default
+  pinMode(PUSH_BUTTON, INPUT_PULLUP);  // in sequential, the button manager sets it already. so this is for momentary mode, to be coherent
 
   digitalWrite(LASER_PINOUT, HIGH);    // light the laser, to show we are working
   delay(250);                          // a little quarter of a second waiting, as to be sure the button will be correctly read
   isMomentaryMode = (digitalRead(PUSH_BUTTON) == LOW); // is the button being pressed  at startup ?
 
-  if (isMomentaryMode) {
-    CommandAcknowledge();  //extra one to prove we are in this mode
-  }
-  // standard for both mode
+  SaveToCurrentSettings();
   CommandAcknowledge();
-  iNextCycleTime = seqMilli_On;  // current cycle before next serqunec change (from on to off)  
+  iNextCycleTime = seqMilli_On;  // current cycle before next sequence change (from on to off)  
 }
 
 void loop() {
   if (isMomentaryMode) {
-    // in momentory mode, we are not using the button manager, we are just checking it directly
+    // in momentary mode, we are not using the button manager, we are just checking the button status directly
     isLaser_lit = (digitalRead(PUSH_BUTTON) == LOW);  // input_pullup thus high when not pressed, low when pressed
     digitalWrite(LASER_PINOUT, isLaser_lit);  // adjust the output of the leaser accordingly
   } else {
-    // i not in monentary mode, read the button state, react to normal events in the processLoopContent
+    // in sequential mode, read the button state, react to normal events in the processLoopContent
     button.read();
 
     if (isLaser_lit) {
