@@ -130,7 +130,7 @@ void onLongPressed() {
         currentFrequency = FREQUENCY_5_HZ;
         break;
     }
-   SaveToCurrentSettings()
+   SaveToCurrentSettings();
    CommandAcknowledge();
   }
 }
