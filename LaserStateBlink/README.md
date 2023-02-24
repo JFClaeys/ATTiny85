@@ -1,1 +1,2 @@
 
+![Diagram](LaserStates.png)
