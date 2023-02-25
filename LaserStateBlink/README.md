@@ -21,6 +21,8 @@ chip is powered from a 3.7v lipo battery, adjusted to 3.3v with a buck boost con
 
 Library for button control : https://github.com/mathertel/OneButton
 
+![Inner components](InnerBuild.jpg)
+
 ## Finite State machine engine
 System is based on finite states, where a set of states are defined and used to achieve specifics tasks then to go to next.
 There are 3 categories of states, namely
