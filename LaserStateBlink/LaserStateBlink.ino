@@ -8,8 +8,8 @@
 
 enum LaserStates currentState;
 uint16_t iNextCycleTime;      // current cycle before next sequence change (from on to off)
-uint8_t currentFrequency = FREQUENCY_5_HZ;  // holds the currently selected frequency
-uint8_t currentDutyCycle = DUTYCYCLE_50;    // holds the currently selected duty cycle
+uint8_t currentFrequency = FREQUENCY_25_HZ;  // holds the currently selected frequency
+uint8_t currentDutyCycle = DUTYCYCLE_10;    // holds the currently selected duty cycle
 
 uint16_t GetSequenceMilli_On() {
   /* calculates the time the laser should be on */
@@ -44,6 +44,9 @@ void processFrequency() {
       currentFrequency = FREQUENCY_20_HZ;
       break;
     case FREQUENCY_20_HZ :
+      currentFrequency = FREQUENCY_25_HZ;
+      break;
+    case FREQUENCY_25_HZ :
       currentFrequency = FREQUENCY_5_HZ;
       break;
   }
@@ -225,6 +228,7 @@ void processStates() {
       break;
 
    case  MOMENTARY_WAIT:
+      /*this is more a placeholder, as to remember we are in momentary mode*/   
       break;
 
     case MOMENTARY_OFF:

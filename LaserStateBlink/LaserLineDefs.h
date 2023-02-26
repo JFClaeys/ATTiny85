@@ -4,7 +4,8 @@
 #define FREQUENCY_5_HZ 5   //  5 hertz, i.e.:  5 cycle per second
 #define FREQUENCY_10_HZ 10 // 10 hertz, i.e.: 10 cycle per second
 #define FREQUENCY_15_HZ 15 // 15 hertz, i.e.: 15 cycle per second
-#define FREQUENCY_20_HZ 20 // 20 hertz, i.e.: 02 cycle per second
+#define FREQUENCY_20_HZ 20 // 20 hertz, i.e.: 20 cycle per second
+#define FREQUENCY_25_HZ 25 // 20 hertz, i.e.: 25 cycle per second
 #define FREQUENCY_FULL_HZ 100
 
 #define DUTYCYCLE_TOT 10
