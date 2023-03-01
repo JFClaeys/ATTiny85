@@ -7,72 +7,49 @@
 #define PUSH_BUTTON PB3
 
 enum LaserStates currentState;
-uint16_t iNextCycleTime;      // current cycle before next sequence change (from on to off)
+unsigned long iNextCycleTime;      // current cycle before next sequence change (from on to off)
 uint8_t currentFrequency = FREQUENCY_25_HZ;  // holds the currently selected frequency
 uint8_t currentDutyCycle = DUTYCYCLE_10;    // holds the currently selected duty cycle
 
 uint16_t GetSequenceMilli_On() {
   /* calculates the time the laser should be on */
-  return (FREQUENCY_FULL_HZ / currentFrequency) * currentDutyCycle;
+  /*return (FREQUENCY_FULL_HZ / currentFrequency) * currentDutyCycle;*/  
+  return DutiesByFreq[currentFrequency][currentDutyCycle].cycleON;
 }
 
 uint16_t GetSequenceMilli_Off() {
   /* calculates the time the laser should be off */
-  return (FREQUENCY_FULL_HZ / currentFrequency) * (DUTYCYCLE_TOT - currentDutyCycle);
+  /*return (FREQUENCY_FULL_HZ / currentFrequency) * (DUTYCYCLE_TOT - currentDutyCycle);*/
+  return DutiesByFreq[currentFrequency][currentDutyCycle].cycleOFF;
 }
 
-void CommandAcknowledge() {
+void CommandAcknowledge( uint8_t ackonLvl ) {
   /* simply blink the lasers, to show we did something */
-  for(byte i = 0; i < 3; i++ ) {
+  for(byte i = 0; i < ackonLvl + 1; i++ ) {
     digitalWrite(LASER_PINOUT, HIGH);
-    delay(75);
+    delay(50);
     digitalWrite(LASER_PINOUT, LOW);
-    delay(75);
+    delay(50);
   }
 }
 
 void processFrequency() {
+
   /* as the press of the button cycles the frequencies, we take the next freq from currently selected */ 
-  switch (currentFrequency) {
-    case FREQUENCY_5_HZ :
-      currentFrequency = FREQUENCY_10_HZ;
-      break;
-    case FREQUENCY_10_HZ :
-      currentFrequency = FREQUENCY_15_HZ;
-      break;
-    case FREQUENCY_15_HZ :
-      currentFrequency = FREQUENCY_20_HZ;
-      break;
-    case FREQUENCY_20_HZ :
-      currentFrequency = FREQUENCY_25_HZ;
-      break;
-    case FREQUENCY_25_HZ :
-      currentFrequency = FREQUENCY_5_HZ;
-      break;
+  currentFrequency++;
+  if (currentFrequency >= FREQUENCY_MAX) {
+    currentFrequency = FREQUENCY_5_HZ;
   }
- CommandAcknowledge();
+ CommandAcknowledge(currentFrequency);
 }
 
 void processDutyCycles() {
   /* same as above, but with duty cycles */ 
-  switch (currentDutyCycle) {
-    case DUTYCYCLE_50 :
-      currentDutyCycle = DUTYCYCLE_40;
-      break;
-    case DUTYCYCLE_40 :
-      currentDutyCycle = DUTYCYCLE_30;
-      break;
-    case DUTYCYCLE_30 :
-      currentDutyCycle = DUTYCYCLE_20;
-      break;
-    case DUTYCYCLE_20 :
-      currentDutyCycle = DUTYCYCLE_10;
-      break;
-    case DUTYCYCLE_10 :
-      currentDutyCycle = DUTYCYCLE_50;
-      break;
+  currentDutyCycle++;
+  if (currentDutyCycle >= DUTYCYCLE_MAX) {
+    currentDutyCycle = DUTYCYCLE_50;
   }
-  CommandAcknowledge();
+  CommandAcknowledge(currentDutyCycle);
 }
 
 void SetState(enum LaserStates newState) {
@@ -258,7 +235,7 @@ void setup() {
     SetState(COMMAND_WAIT); // otherwise, we are waiting for a key press for cycle start. We enter the command mode for this reason
   }
 
-  CommandAcknowledge();
+  CommandAcknowledge(1);
 }
 
 void loop() {

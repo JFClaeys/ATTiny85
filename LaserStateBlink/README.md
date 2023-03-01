@@ -12,7 +12,7 @@
   - **command**
      - this mode is reached when in frequency blinking and stoping the cycle.
      - commands available are 
-       - long press : frequency change : 5 -> 10 -> 15 -> 20 -> 5
+       - long press : frequency change : 5 -> 10 -> 15 -> 20 -> 25 -> 30 -> 35 -> 40 -> 45 -> 5
        - double press : duty cycle change : 50% -> 40% - 30% -> 20% -> 10% -> 50%
      - to exit command mode, single button press to resume frequency blinking
 4. The laser is fed directly from PB4.
