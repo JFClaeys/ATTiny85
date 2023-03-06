@@ -42,8 +42,8 @@ enum LaserStates {
 };
 
 typedef struct {
-  uint8_t cycleON;
-  uint8_t cycleOFF;
+  byte cycleON;
+  byte cycleOFF;
 } DutyCycle;
 
 typedef struct {

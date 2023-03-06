@@ -7,9 +7,9 @@
 #define PUSH_BUTTON PB3
 
 enum LaserStates currentState;
-unsigned long iNextCycleTime;      // current cycle before next sequence change (from on to off)
-uint8_t currentFrequency = FREQUENCY_25_HZ;  // holds the currently selected frequency
-uint8_t currentDutyCycle = DUTYCYCLE_10;    // holds the currently selected duty cycle
+unsigned long iNextCycleTime;             // current cycle before next sequence change (from on to off)
+byte currentFrequency = FREQUENCY_25_HZ;  // holds the currently selected frequency
+byte currentDutyCycle = DUTYCYCLE_10;     // holds the currently selected duty cycle
 
 uint16_t GetSequenceMilli_On() {
   /* calculates the time the laser should be on */
@@ -23,7 +23,7 @@ uint16_t GetSequenceMilli_Off() {
   return DutiesByFreq[currentFrequency][currentDutyCycle].cycleOFF;
 }
 
-void CommandAcknowledge( uint8_t ackonLvl ) {
+void CommandAcknowledge( byte ackonLvl ) {
   /* simply blink the lasers, to show we did something */
   for(byte i = 0; i < ackonLvl + 1; i++ ) {
     digitalWrite(LASER_PINOUT, HIGH);
