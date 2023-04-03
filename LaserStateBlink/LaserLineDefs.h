@@ -29,7 +29,14 @@ enum LaserStates {
   CYCLE_OFF_START,
   CYCLE_OFF_WAIT,
   CYCLE_OFF_END,
-  
+
+  VARIABLE_ON_START,
+  VARIABLE_ON_WAIT,
+  VARIABLE_ON_END,
+  VARIABLE_OFF_START,
+  VARIABLE_OFF_WAIT,
+  VARIABLE_OFF_END,
+
   COMMAND_ON,
   COMMAND_WAIT,
   COMMAND_OFF,
@@ -65,5 +72,15 @@ const DutyCycle DutiesByFreq[FREQUENCY_MAX][DUTYCYCLE_MAX] =
 /* 45 */{ { 11,  11}, {  9,  13}, {  7,  16}, {  4,  18}, {  2,  20}, },
 };
 
-
+const byte TriangleAndSinDualvalues[36][2] {
+   /*trian    sin*/
+   {  6, 129},   { 16, 151},   { 26, 173},   { 36, 193},   { 46, 211},
+   { 56, 226},   { 66, 239},   { 76, 248},   { 86, 253},   { 96, 254},
+   {106, 252},   {116, 246},   {126, 236},   {136, 223},   {146, 207},
+   {156, 189},   {166, 169},   {176, 147},   {186, 125},   {176, 103},
+   {166,  81},   {156,  61},   {146,  43},   {136,  28},   {126,  15},
+   {116,   6},   {106,   1},   { 96,   0},   { 86,   2},   { 76,   8},
+   { 66,  18},   { 56,  31},   { 46,  47},   { 36,  65},   { 26,  85},
+   { 16, 107},
+};
 #endif//LASERLINE_DEFS_H

@@ -2,26 +2,43 @@
 #include "LaserLineDefs.h"
 
 #define CLICK_MS_DURATION 120
-
 #define LASER_PINOUT PB4
 #define PUSH_BUTTON PB3
 
 enum LaserStates currentState;
-unsigned long iNextCycleTime;             // current cycle before next sequence change (from on to off)
-byte currentFrequency = FREQUENCY_25_HZ;  // holds the currently selected frequency
-byte currentDutyCycle = DUTYCYCLE_10;     // holds the currently selected duty cycle
+enum LaserStates initialState;
+bool isDoingSinus = false;
+unsigned long iNextCycleTime = 0;          // current cycle before next sequence change (from on to off)
+unsigned int iNextCycleStep = 0;           // while doing variable OFF cycles,will tell which steps we are in
+byte currentFrequency = FREQUENCY_20_HZ;   // holds the currently selected frequency
+byte currentDutyCycle = DUTYCYCLE_10;      // holds the currently selected duty cycle  
+
+/********sequences controlers********/
+
+unsigned int calculateNextSinValue( unsigned int sinAngle) {
+  //return sin( sinAngle * PI_180) and scaled it to 255, even if wee are going to scale it down afterward;
+  return ((sin( sinAngle * 0.0174532955) * 2.5) + 2.5 ) * 51;
+ }
 
 uint16_t GetSequenceMilli_On() {
-  /* calculates the time the laser should be on */
-  /*return (FREQUENCY_FULL_HZ / currentFrequency) * currentDutyCycle;*/  
+  /* "calculates" the time the laser should be on */
   return DutiesByFreq[currentFrequency][currentDutyCycle].cycleON;
 }
 
 uint16_t GetSequenceMilli_Off() {
-  /* calculates the time the laser should be off */
-  /*return (FREQUENCY_FULL_HZ / currentFrequency) * (DUTYCYCLE_TOT - currentDutyCycle);*/
-  return DutiesByFreq[currentFrequency][currentDutyCycle].cycleOFF;
+  /* "calculates" the time the laser should be off */
+  return DutiesByFreq[currentFrequency][currentDutyCycle].cycleOFF; 
 }
+
+byte GetVariableMilli_Off(){
+    iNextCycleStep = iNextCycleStep + 1;
+    if (iNextCycleStep > 36-4) {
+      iNextCycleStep = 3;
+    }
+    return TriangleAndSinDualvalues[iNextCycleStep][isDoingSinus];
+}
+
+/********settings controlers********/
 
 void CommandAcknowledge( byte ackonLvl ) {
   /* simply blink the lasers, to show we did something */
@@ -34,7 +51,6 @@ void CommandAcknowledge( byte ackonLvl ) {
 }
 
 void processFrequency() {
-
   /* as the press of the button cycles the frequencies, we take the next freq from currently selected */ 
   currentFrequency++;
   if (currentFrequency >= FREQUENCY_MAX) {
@@ -52,9 +68,29 @@ void processDutyCycles() {
   CommandAcknowledge(currentDutyCycle);
 }
 
+/********Helpers********/
+
 void SetState(enum LaserStates newState) {
   /* currently, this is just a setter.  maybe adding some logic would be usefull, but not now */
   currentState = newState;
+}
+
+LaserStates GetNextState(enum LaserStates newState) {
+  switch (newState) {
+    case CYCLE_ON_START:  return CYCLE_ON_WAIT;
+    case CYCLE_ON_WAIT:   return CYCLE_ON_END;
+    case CYCLE_ON_END:    return CYCLE_OFF_START;
+    case CYCLE_OFF_START: return CYCLE_OFF_WAIT;
+    case CYCLE_OFF_WAIT:  return CYCLE_OFF_END;
+    case CYCLE_OFF_END:   return CYCLE_ON_START;
+
+    case VARIABLE_ON_START:  return VARIABLE_ON_WAIT;
+    case VARIABLE_ON_WAIT:   return VARIABLE_ON_END;
+    case VARIABLE_ON_END:    return VARIABLE_OFF_START;
+    case VARIABLE_OFF_START: return VARIABLE_OFF_WAIT;
+    case VARIABLE_OFF_WAIT:  return VARIABLE_OFF_END;
+    case VARIABLE_OFF_END:   return VARIABLE_ON_START;
+  }
 }
 
 /* the two following are switching states to signal new cycle of frequency */
@@ -76,6 +112,8 @@ void onSinglePressed() {
     /* a single press will stop any cycles, and put the system on command mode */
     case CYCLE_ON_WAIT:
     case CYCLE_OFF_WAIT:
+    case VARIABLE_ON_WAIT:
+    case VARIABLE_OFF_WAIT:
       SetState(COMMAND_ON);
       break;
 
@@ -143,35 +181,46 @@ void processInputs() {
 void processStates() {
   switch (currentState) {
     case CYCLE_ON_START:
+    case VARIABLE_ON_START:
       digitalWrite(LASER_PINOUT, HIGH);
       iNextCycleTime = millis() + GetSequenceMilli_On();
-      SetState( CYCLE_ON_WAIT );
+      SetState( GetNextState(currentState) );
       break;
 
     case CYCLE_ON_WAIT:
+    case VARIABLE_ON_WAIT:
       if (millis() >= iNextCycleTime) {
-        SetState( CYCLE_ON_END );
+        SetState( GetNextState(currentState) );
       }
       break;
 
     case CYCLE_ON_END:
-      SetState( CYCLE_OFF_START );
+    case VARIABLE_ON_END:
+      SetState( GetNextState(currentState) );
       break;
 
     case CYCLE_OFF_START:
+    case VARIABLE_OFF_START:
+      if (currentState == CYCLE_OFF_START) {
+        iNextCycleTime = millis() + GetSequenceMilli_Off();
+      } else {
+        iNextCycleTime = millis() + GetVariableMilli_Off();
+      }
+      // common work
       digitalWrite(LASER_PINOUT, LOW);
-      iNextCycleTime = millis() + GetSequenceMilli_Off();
-      SetState( CYCLE_OFF_WAIT );
+      SetState( GetNextState(currentState) );
       break;
 
     case CYCLE_OFF_WAIT:
+    case VARIABLE_OFF_WAIT:
       if (millis() >= iNextCycleTime) {
-        SetState( CYCLE_OFF_END );
+        SetState( GetNextState(currentState) );
       }
       break;
 
     case CYCLE_OFF_END:
-      SetState( CYCLE_ON_START );
+    case VARIABLE_OFF_END:
+      SetState( GetNextState(currentState) );
       break;
 
     case COMMAND_ON:
@@ -184,7 +233,7 @@ void processStates() {
       break;
 
     case COMMAND_OFF:
-      SetState( CYCLE_ON_START );
+      SetState( initialState );
       break;
 
     case COMMAND_FREQUENCY:
@@ -205,7 +254,7 @@ void processStates() {
       break;
 
    case  MOMENTARY_WAIT:
-      /*this is more a placeholder, as to remember we are in momentary mode*/   
+      /*this is more a placeholder, as to remember we are in momentary mode*/
       break;
 
     case MOMENTARY_OFF:
@@ -228,14 +277,20 @@ void setup() {
 
   digitalWrite(LASER_PINOUT, HIGH);    // light the laser, to show we are working
   delay(250);                          // a quarter of a second waiting, as to be sure the button will be correctly read
-  
-  if (digitalRead(PUSH_BUTTON) == LOW) { // is the button being pressed  at startup ?
-    SetState(MOMENTARY_ON);  // so we are in momentary mode. Since the button is detected as pressed, set state alike
-  } else {
-    SetState(COMMAND_WAIT); // otherwise, we are waiting for a key press for cycle start. We enter the command mode for this reason
-  }
 
+  if (digitalRead(PUSH_BUTTON) == LOW) {
+    initialState = VARIABLE_ON_START;
+  } else {
+    initialState = CYCLE_ON_START;
+  };
   CommandAcknowledge(1);
+  SetState(COMMAND_WAIT);
+
+  if (initialState == VARIABLE_ON_START) {
+    delay(500);
+    isDoingSinus = (digitalRead(PUSH_BUTTON) == LOW);
+    CommandAcknowledge(2);
+  }
 }
 
 void loop() {
