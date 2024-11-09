@@ -3,15 +3,16 @@
 #define FREQUENCY_5_HZ 5   //  5 hertz, i.e.:  5 cycle per second
 #define FREQUENCY_10_HZ 10 // 10 hertz, i.e.: 10 cycle per second
 #define FREQUENCY_15_HZ 15 // 15 hertz, i.e.: 15 cycle per second
-#define FREQUENCY_20_HZ 20 // 20 hertz, i.e.: 02 cycle per second
+#define FREQUENCY_20_HZ 20 // 20 hertz, i.e.: 20 cycle per second
+#define FREQUENCY_25_HZ 25 // 25 hertz, i.e.: 25 cycle per second
 #define FREQUENCY_FULL_HZ 100
 
 #define DUTYCYCLE_TOT 10
 #define DUTYCYCLE_50 5   // 50% on, 50% off
 #define DUTYCYCLE_40 4   // 40% on, 60% off
-#define DUTYCYCLE_30 3   // 40% on, 60% off
-#define DUTYCYCLE_20 2   // 40% on, 60% off
-#define DUTYCYCLE_10 1   // 40% on, 60% off
+#define DUTYCYCLE_30 3   // 30% on, 70% off
+#define DUTYCYCLE_20 2   // 20% on, 80% off
+#define DUTYCYCLE_10 1   // 10% on, 90% off
 
 #define CLICK_MS_DURATION 120
 
@@ -25,8 +26,8 @@ void onLongPressed();
 
 bool isLaser_lit = false;     // have we requested leds to be visible or not? (i.e: pause mode)
 bool isMomentaryMode = false; // this mode will be activated only when button is pushed while booting
-uint8_t currentFrequency = FREQUENCY_5_HZ;  // holds the currently selected frequency
-uint8_t currentDutyCycle = DUTYCYCLE_50;    // holds the currently selected duty cycle
+uint8_t currentFrequency = FREQUENCY_20_HZ;  // holds the currently selected frequency
+uint8_t currentDutyCycle = DUTYCYCLE_10;    // holds the currently selected duty cycle
 uint16_t seqMilli_On;         //stores the calculated ON duty cycle duration
 uint16_t seqMilli_Off;        //stores the calculated OFF duty cycle duration
 uint16_t iNextCycleTime;      // current cycle before next sequence change (from on to off)
@@ -127,6 +128,8 @@ void onLongPressed() {
         currentFrequency = FREQUENCY_20_HZ;
         break;
       case FREQUENCY_20_HZ :
+        currentFrequency = FREQUENCY_25_HZ;
+      case FREQUENCY_25_HZ :
         currentFrequency = FREQUENCY_5_HZ;
         break;
     }

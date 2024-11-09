@@ -6,7 +6,7 @@
 #define PUSH_BUTTON PB3
 
 enum LaserStates currentState;
-enum LaserStates initialState;
+enum LaserStates initialState;             // state that is defined at boot time, either cycling or variable
 bool isDoingSinus = false;
 unsigned long iNextCycleTime = 0;          // current cycle before next sequence change (from on to off)
 unsigned int iNextCycleStep = 0;           // while doing variable OFF cycles,will tell which steps we are in
@@ -21,12 +21,12 @@ unsigned int calculateNextSinValue( unsigned int sinAngle) {
  }
 
 uint16_t GetSequenceMilli_On() {
-  /* "calculates" the time the laser should be on */
+  /* calculates the time the laser should be on */
   return DutiesByFreq[currentFrequency][currentDutyCycle].cycleON;
 }
 
 uint16_t GetSequenceMilli_Off() {
-  /* "calculates" the time the laser should be off */
+  /* calculates the time the laser should be off */
   return DutiesByFreq[currentFrequency][currentDutyCycle].cycleOFF; 
 }
 
