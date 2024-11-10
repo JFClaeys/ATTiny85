@@ -22,6 +22,8 @@
 #define DUTYCYCLE_10 4   // 10% on, 90% off
 #define DUTYCYCLE_MAX DUTYCYCLE_10+1
 
+#define SIN_TRIANGLE_MAX 36  // maximum boundaries of the Triangle and Sinus hardcoded array
+
 enum LaserStates {
   CYCLE_ON_START,
   CYCLE_ON_WAIT,
@@ -72,7 +74,7 @@ const DutyCycle DutiesByFreq[FREQUENCY_MAX][DUTYCYCLE_MAX] =
 /* 45 */{ { 11,  11}, {  9,  13}, {  7,  16}, {  4,  18}, {  2,  20}, },
 };
 
-const byte TriangleAndSinDualvalues[36][2] {
+const byte TriangleAndSinDualvalues[SIN_TRIANGLE_MAX][2] {
    /*trian    sin*/
    {  6, 129},   { 16, 151},   { 26, 173},   { 36, 193},   { 46, 211},
    { 56, 226},   { 66, 239},   { 76, 248},   { 86, 253},   { 96, 254},
@@ -83,4 +85,5 @@ const byte TriangleAndSinDualvalues[36][2] {
    { 66,  18},   { 56,  31},   { 46,  47},   { 36,  65},   { 26,  85},
    { 16, 107},
 };
+
 #endif//LASERLINE_DEFS_H

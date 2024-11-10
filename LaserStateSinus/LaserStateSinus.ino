@@ -11,11 +11,11 @@
 
 enum LaserStates currentState;
 enum LaserStates initialState;            // state that is defined at boot time, either cycling or variable
-unsigned int i = 0;
-bool isDoingSinus;
-unsigned long iNextCycleTime = 0;             // current cycle before next sequence change (from on to off)
+unsigned int iSinusStepCounter = 0;
+bool isDoingSinus = false;                // this is to specify if we are using the triangle or the sinusoidable part in the variable cycle
+unsigned long iNextCycleTime = 0;         // current cycle before next sequence change (from on to off)
 unsigned int iNextCycleStep = 0;          // while doing variable OFF cycles,will tell which steps we are in
-byte currentFrequency = FREQUENCY_20_HZ;   // holds the currently selected frequency
+byte currentFrequency = FREQUENCY_20_HZ;  // holds the currently selected frequency
 byte currentDutyCycle = DUTYCYCLE_10;     // holds the currently selected duty cycle  
 
 /********sequences controlers********/
@@ -40,11 +40,6 @@ void Write_EEPROM_DutyCycle( byte aValue )
   EEPROM.write(EEPROM_DUTYCYCLE_ADDRESS, aValue);
 }
 
-unsigned int calculateNextSinValue( unsigned int sinAngle) {
-  //return sin( sinAngle * PI_180) and scaled it to 255, even if wee are going to scale it down afterward;
-  return ((sin( sinAngle * 0.0174532955) * 2.5) + 2.5 ) * 51;
- }
-
 uint16_t GetSequenceMilli_On() {
   /* calculates the time the laser should be on */
   /*return (FREQUENCY_FULL_HZ / currentFrequency) * currentDutyCycle;*/  
@@ -56,14 +51,16 @@ uint16_t GetSequenceMilli_Off() {
   return DutiesByFreq[currentFrequency][currentDutyCycle].cycleOFF; 
 }
 
-byte GetVariableMilli_Off( unsigned int* aInc ){
-    /*byte sinScaled = calculateNextSinValue( *aInc ); */
-    *aInc = *aInc + 1;
-    if (*aInc > 36-4) {
-      *aInc = 3;
+byte GetVariableMilli_Off( ) {
+    /*byte sinScaled = calculateNextSinValue( *aInc );
+      //return sin( sinAngle * PI_180) and scaled it to 255, even if wee are going to scale it down afterward;
+        return ((sin( sinAngle * 0.0174532955) * 2.5) + 2.5 ) * 51;*/
+    iSinusStepCounter = iSinusStepCounter + 1;
+    if (iSinusStepCounter > SIN_TRIANGLE_MAX-4) {
+      iSinusStepCounter = 3;
     }
-    
-    return TriangleAndSinDualvalues[*aInc][isDoingSinus];                        
+
+    return TriangleAndSinDualvalues[iSinusStepCounter][isDoingSinus];                        
 }
 
 /********settings controlers********/
@@ -120,7 +117,7 @@ LaserStates GetNextState(enum LaserStates newState) {
     case VARIABLE_OFF_WAIT:  return VARIABLE_OFF_END;
     case VARIABLE_OFF_END:   return VARIABLE_ON_START;
   }
-}  
+}
 
 /* the two following are switching states to signal new cycle of frequency */
 void onDoubleClick() {
@@ -204,13 +201,13 @@ void processInputs() {
     default:
       button.read();
       break;
-  }      
+  }
 }
 
 void processStates() {
   switch (currentState) {
     case CYCLE_ON_START:
-    case VARIABLE_ON_START:    
+    case VARIABLE_ON_START:
       digitalWrite(LASER_PINOUT, HIGH);
       iNextCycleTime = millis() + GetSequenceMilli_On();
       SetState( GetNextState(currentState) );
@@ -233,10 +230,10 @@ void processStates() {
       if (currentState == CYCLE_OFF_START) { 
         iNextCycleTime = millis() + GetSequenceMilli_Off();
       } else {
-        iNextCycleTime = millis() + GetVariableMilli_Off(&i);
-      }    
+        iNextCycleTime = millis() + GetVariableMilli_Off();
+      }
       // common work
-      digitalWrite(LASER_PINOUT, LOW);    
+      digitalWrite(LASER_PINOUT, LOW);
       SetState( GetNextState(currentState) );
       break;
 
@@ -251,7 +248,7 @@ void processStates() {
     case VARIABLE_OFF_END:
       SetState( GetNextState(currentState) );
       break;
-          
+
     case COMMAND_ON:
       digitalWrite(LASER_PINOUT, LOW);
       SetState( COMMAND_WAIT );
@@ -263,13 +260,13 @@ void processStates() {
 
     case COMMAND_OFF:
       SetState( initialState );
-      /*command off means we are now back on duty.  the setup is made for a new dutycycle/frequencey pair */
+      /* command off means we are now back on duty.  the setup is made for a new dutycycle/frequencey pair */
       /* I need to write down the duty cycle and/or frequency in eeprom if ever they have cahnged from what is already saved */
-      if ( currentFrequency != Read_EEPROM_Frequency() )  
+      if ( currentFrequency != Read_EEPROM_Frequency() )
       {
         Write_EEPROM_Frequency( currentFrequency );
       }
-      if ( currentDutyCycle != Read_EEPROM_DutyCycle() )  
+      if ( currentDutyCycle != Read_EEPROM_DutyCycle() )
       {
         Write_EEPROM_DutyCycle( currentDutyCycle );
       }
@@ -288,12 +285,12 @@ void processStates() {
     case MOMENTARY_ON:
       if (digitalRead(LASER_PINOUT) == LOW) {
         digitalWrite(LASER_PINOUT, HIGH);
-      } 
+      }
       SetState(MOMENTARY_WAIT);
       break;
 
    case  MOMENTARY_WAIT:
-      /*this is more a placeholder, as to remember we are in momentary mode*/   
+      /*this is more a placeholder, as to remember we are in momentary mode*/
       break;
 
     case MOMENTARY_OFF:
@@ -308,13 +305,20 @@ void processStates() {
   }
 }
 
+void InitializeFrequencyAndDutyCycle()
+{  /* read from EEPRROM values for duty cyles and frequency, as preserved (eventually) last time a command more changed either values
+      Feeling  a bit paranoiac, let's check the boundaries of the read values*/
+  currentFrequency = min(FREQUENCY_MAX-1, EEPROM.read(EEPROM_FREQUENCY_ADDRESS));
+  currentDutyCycle = min(DUTYCYCLE_MAX-1, EEPROM.read(EEPROM_DUTYCYCLE_ADDRESS));
+}
+
 /*======================================================================*/
 
 void setup() {
   pinMode(LASER_PINOUT, OUTPUT);
   pinMode(PUSH_BUTTON, INPUT_PULLUP);  // in cycle, button manager sets it already. This is for momentary mode, to be coherent
 
-  //currentPattern = EEPROM.read(EEPROM_PATTERN_ADDRESS);
+  InitializeFrequencyAndDutyCycle();
 
   digitalWrite(LASER_PINOUT, HIGH);    // light the laser, to show we are working
   delay(250);                          // a quarter of a second waiting, as to be sure the button will be correctly read
@@ -325,15 +329,15 @@ void setup() {
     initialState = CYCLE_ON_START;
   };
   CommandAcknowledge(1);
-  SetState(COMMAND_WAIT);  
+  SetState(COMMAND_WAIT);
 
-  delay(500); 
-  if (digitalRead(PUSH_BUTTON) == LOW) { // is the button being pressed  at startup ?
-    SetState(MOMENTARY_ON);  // so we are in momentary mode. Since the button is detected as pressed, set state alike
-  } else {
-    SetState(COMMAND_WAIT); // otherwise, we are waiting for a key press for cycle start. We enter the command mode for this reason
-  }
-  CommandAcknowledge(2);
+  if (initialState == VARIABLE_ON_START) {
+    /*if we have selected variable at start, we need to know if we are going triangle or sinusoidal
+      so wait hald a sequnce and see what has been set*/
+    delay(500);
+    isDoingSinus = (digitalRead(PUSH_BUTTON) == LOW);  // button down, sinus.  else, triangle
+    CommandAcknowledge(2);
+  }  
 }
 
 void loop() {
