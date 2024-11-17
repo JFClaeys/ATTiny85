@@ -18,13 +18,13 @@
 4. The laser is fed directly from PB4.
 5. In order to be able to program the ATTINY85, there is a 6 pin onboard jumper that connects ATTINY85 pins to Arduino Uno corresponding pin as follows:
 
-    Arduino       ATtiny85
-    5V or 3.3v    Vcc
-    GND           GND
-    Pin 13        Pin 2
-    Pin 12        Pin 1
-    Pin 11        Pin 0
-    Pin 10        Reset
+  - Arduino--> ATtiny85
+  - 5V or 3.3    Vcc
+  - GND          GND
+  - Pin 13       Pin 2
+  - Pin 12       Pin 1
+  - Pin 11       Pin 0
+  - Pin 10       Reset
 
 ![SPI board](SPIBoard.png)
 ![SPI Board to Laser](SPIBoardConnected.png)
@@ -36,6 +36,9 @@ chip is powered from a 3.7v lipo battery, adjusted to 3.3v with a buck boost con
 Library for button control : https://github.com/mathertel/OneButton
 
 ![Inner components](InnerBuild.jpg)
+
+![what can be done with this](sample.JPG)
+Note that the assembly is actually moving while the camera takes a long exposure, typically 10 seconds and (oftenly WAY) more.
 
 ## Finite State machine engine
 System is based on finite states, where a set of states are defined and used to achieve specifics tasks then to go to next.
