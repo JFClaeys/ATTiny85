@@ -17,18 +17,19 @@
      - to exit command mode, single button press to resume frequency blinking
 4. The laser is fed directly from PB4.
 5. In order to be able to program the ATTINY85, there is a 6 pin onboard jumper that connects ATTINY85 pins to Arduino Uno corresponding pin as follows:
-  - Arduino--> ATtiny85
-  - 5V or 3.3    Vcc
-  - GND          GND
-  - Pin 13       Pin 2
-  - Pin 12       Pin 1
-  - Pin 11       Pin 0
-  - Pin 10       Reset
+
+    Arduino       ATtiny85
+    5V or 3.3v    Vcc
+    GND           GND
+    Pin 13        Pin 2
+    Pin 12        Pin 1
+    Pin 11        Pin 0
+    Pin 10        Reset
 
 ![SPI board](SPIBoard.png)
 ![SPI Board to Laser](SPIBoardConnected.png)
 
-Done using the method found in https://www.instructables.com/How-to-Program-an-Attiny85-From-an-Arduino-Uno/
+The SPI board and connection was done using the method found in Instructables: https://www.instructables.com/How-to-Program-an-Attiny85-From-an-Arduino-Uno/
 
 chip is powered from a 3.7v lipo battery, adjusted to 3.3v with a buck boost converter
 
